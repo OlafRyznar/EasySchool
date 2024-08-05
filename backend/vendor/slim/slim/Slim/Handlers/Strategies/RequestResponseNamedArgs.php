@@ -17,6 +17,7 @@ use RuntimeException;
 
 /**
  * Route callback strategy with route parameters as individual arguments.
+ * @api
  */
 class RequestResponseNamedArgs implements InvocationStrategyInterface
 {
@@ -31,12 +32,7 @@ class RequestResponseNamedArgs implements InvocationStrategyInterface
      * Invoke a route callable with request, response and all route parameters
      * as individual arguments.
      *
-     * @param callable               $callable
-     * @param ServerRequestInterface $request
-     * @param ResponseInterface      $response
      * @param array<string, string>  $routeArguments
-     *
-     * @return ResponseInterface
      */
     public function __invoke(
         callable $callable,

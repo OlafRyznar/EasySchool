@@ -2,9 +2,11 @@
 
 use DI\Container;
 use DI\Bridge\Slim\Bridge;
-use Slim\Factory\AppFactory;
 use Psr\Container\ContainerInterface;
 use App\Controllers\StudentController;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7Server\ServerRequestCreator;
+use Slim\Factory\AppFactory;
 
 // Włączenie autoloadera Composer
 require __DIR__ . '/../vendor/autoload.php';
@@ -39,10 +41,21 @@ $container->set(StudentController::class, function(ContainerInterface $container
 
 // Tworzenie aplikacji Slim z użyciem kontenera DI
 AppFactory::setContainer($container);
+$psr17Factory = new Psr17Factory();
+AppFactory::setResponseFactory($psr17Factory);
 $app = Bridge::create($container);
 
 // Rejestracja tras
 (require __DIR__ . '/../routes/web.php')($app);
 
+// Tworzenie ServerRequest za pomocą Nyholm PSR-7 Server
+$creator = new ServerRequestCreator(
+    $psr17Factory, // ServerRequestFactory
+    $psr17Factory, // UriFactory
+    $psr17Factory, // UploadedFileFactory
+    $psr17Factory  // StreamFactory
+);
+$request = $creator->fromGlobals();
+
 // Uruchomienie aplikacji
-$app->run();
+$app->run($request);

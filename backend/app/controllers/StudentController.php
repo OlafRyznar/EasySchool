@@ -15,7 +15,7 @@ class StudentController
         $this->student = $student;
     }
 
-    public function getAllStudents(Request $request, Response $response, $args)
+    public function getAllStudents(Request $request, Response $response, array $args = []): Response
     {
         $students = $this->student->getAll();
         $response->getBody()->write(json_encode($students));

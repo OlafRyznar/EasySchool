@@ -26,20 +26,18 @@ use function json_encode;
 use function preg_match;
 use function sprintf;
 
+/**
+ * @template TContainerInterface of (ContainerInterface|null)
+ */
 final class CallableResolver implements AdvancedCallableResolverInterface
 {
-    /**
-     * @var string
-     */
-    public static $callablePattern = '!^([^\:]+)\:([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)$!';
+    public static string $callablePattern = '!^([^\:]+)\:([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)$!';
+
+    /** @var TContainerInterface $container */
+    private ?ContainerInterface $container;
 
     /**
-     * @var ContainerInterface|null
-     */
-    private $container;
-
-    /**
-     * @param ContainerInterface|null $container
+     * @param TContainerInterface $container
      */
     public function __construct(?ContainerInterface $container = null)
     {
@@ -58,7 +56,7 @@ final class CallableResolver implements AdvancedCallableResolverInterface
         $resolved = $toResolve;
         if (is_string($toResolve)) {
             $resolved = $this->resolveSlimNotation($toResolve);
-            $resolved[1] = $resolved[1] ?? '__invoke';
+            $resolved[1] ??= '__invoke';
         }
         $callable = $this->assertCallable($resolved, $toResolve);
         return $this->bindToContainer($callable);
@@ -82,12 +80,8 @@ final class CallableResolver implements AdvancedCallableResolverInterface
 
     /**
      * @param string|callable $toResolve
-     * @param callable        $predicate
-     * @param string          $defaultMethod
      *
      * @throws RuntimeException
-     *
-     * @return callable
      */
     private function resolveByPredicate($toResolve, callable $predicate, string $defaultMethod): callable
     {
@@ -112,8 +106,6 @@ final class CallableResolver implements AdvancedCallableResolverInterface
 
     /**
      * @param mixed $toResolve
-     *
-     * @return bool
      */
     private function isRoute($toResolve): bool
     {
@@ -122,8 +114,6 @@ final class CallableResolver implements AdvancedCallableResolverInterface
 
     /**
      * @param mixed $toResolve
-     *
-     * @return bool
      */
     private function isMiddleware($toResolve): bool
     {
@@ -131,19 +121,16 @@ final class CallableResolver implements AdvancedCallableResolverInterface
     }
 
     /**
-     * @param string $toResolve
-     *
      * @throws RuntimeException
      *
      * @return array{object, string|null} [Instance, Method Name]
      */
     private function resolveSlimNotation(string $toResolve): array
     {
+        /** @psalm-suppress ArgumentTypeCoercion */
         preg_match(CallableResolver::$callablePattern, $toResolve, $matches);
         [$class, $method] = $matches ? [$matches[1], $matches[2]] : [$toResolve, null];
 
-        /** @var string $class */
-        /** @var string|null $method */
         if ($this->container && $this->container->has($class)) {
             $instance = $this->container->get($class);
             if (!is_object($instance)) {
@@ -166,8 +153,6 @@ final class CallableResolver implements AdvancedCallableResolverInterface
      * @param mixed $toResolve
      *
      * @throws RuntimeException
-     *
-     * @return callable
      */
     private function assertCallable($resolved, $toResolve): callable
     {
@@ -182,11 +167,6 @@ final class CallableResolver implements AdvancedCallableResolverInterface
         return $resolved;
     }
 
-    /**
-     * @param callable $callable
-     *
-     * @return callable
-     */
     private function bindToContainer(callable $callable): callable
     {
         if (is_array($callable) && $callable[0] instanceof Closure) {
