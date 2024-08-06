@@ -1,32 +1,33 @@
-// src/App.jsx
-import React from 'react';
+// src/components/HomePage.jsx
 
-const Navbar = () => {
-  return (
-    <nav className="flex items-center justify-between bg-gray-100 p-4">
-      {/* Icons Section */}
-      <div className="flex items-center space-x-4">
-        <div className="w-6 h-6 rounded-full bg-[#519CF4]"></div>
-        <div className="w-6 h-6 rounded-full bg-[#519CF4]"></div>
-      </div>
-      {/* Links Section */}
-      <div className="flex space-x-6">
-        <a href="#" className="text-[#519CF4] hover:underline">For Teacher</a>
-        <a href="#" className="text-[#519CF4] hover:underline">For Student</a>
-        <a href="#" className="text-[#519CF4] hover:underline">For Parent</a>
-        <a href="#" className="text-[#519CF4] hover:underline">Other</a>
-      </div>
-    </nav>
-  );
-};
+import React, { useEffect } from 'react';
+import videoSrc from '../assets/video1.mp4'; // Import wideo
+import './HomePage.css'; // Import stylów
 
-const App = () => {
+const HomePage = () => {
+  useEffect(() => {
+    // Dodaj klasę do body, aby zablokować przewijanie
+    document.body.classList.add('home-page-scroll-lock');
+    
+    return () => {
+      // Usuń klasę po odmontowaniu komponentu
+      document.body.classList.remove('home-page-scroll-lock');
+    };
+  }, []);
+
   return (
-    <div>
-      <Navbar />
-      {/* Other components or content can go here */}
+    <div className="home-page w-full h-screen overflow-hidden">
+      <video 
+        className="w-full h-full object-cover"
+        autoPlay
+        muted
+        playsInline
+      >
+        <source src={videoSrc} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
     </div>
   );
 };
 
-export default App;
+export default HomePage;

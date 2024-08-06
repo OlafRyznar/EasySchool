@@ -1,3 +1,5 @@
+// src/App.jsx
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
@@ -11,6 +13,7 @@ import OtherPage from './components/OtherPage';
 import GradePage from './components/GradesPage';
 import SchedulePage from './components/SchedulePage';
 import PresencePage from './components/PresencePage';
+import HomePage from './components/HomePage'; // Dodaj import dla strony głównej
 
 // Funkcja do sprawdzania, czy użytkownik jest zalogowany
 const useAuth = () => {
@@ -44,6 +47,7 @@ const Layout = () => {
     <div>
       {!isNoHeaderPage && (isSecondaryHeaderPage ? <SecondaryHeader /> : <Header />)}
       <Routes>
+        <Route path="/" element={<HomePage />} /> {/* Dodaj trasę dla strony głównej */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/create-account" element={<CreateAccountPage />} />
         <Route path="/student" element={<ProtectedRoute element={<StudentPage />} />} />
