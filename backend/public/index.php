@@ -4,9 +4,14 @@ use DI\Container;
 use DI\Bridge\Slim\Bridge;
 use Psr\Container\ContainerInterface;
 use App\Controllers\StudentController;
+use App\Controllers\BookController;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Slim\Factory\AppFactory;
+
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Message\ResponseInterface;
 
 // Włączenie autoloadera Composer
 require __DIR__ . '/../vendor/autoload.php';
@@ -34,9 +39,21 @@ $container->set(App\Models\Student::class, function(ContainerInterface $containe
     return new App\Models\Student($container->get(PDO::class));
 });
 
+// Rejestracja modelu Book
+
+$container->set(App\Models\Book::class, function(ContainerInterface $container) {
+    return new App\Models\Book($container->get(PDO::class));
+});
+
 // Rejestracja kontrolera StudentController
 $container->set(StudentController::class, function(ContainerInterface $container) {
     return new StudentController($container->get(App\Models\Student::class));
+});
+
+// Rejestracja kontrolera BookController
+
+$container->set(BookController::class, function(ContainerInterface $container) {
+    return new BookController($container->get(App\Models\Book::class));
 });
 
 // Tworzenie aplikacji Slim z użyciem kontenera DI
@@ -45,8 +62,32 @@ $psr17Factory = new Psr17Factory();
 AppFactory::setResponseFactory($psr17Factory);
 $app = Bridge::create($container);
 
+
+
 // Rejestracja tras
 (require __DIR__ . '/../routes/web.php')($app);
+
+
+//////////////////////
+$app->add(function (ServerRequestInterface $request, RequestHandlerInterface $handler) use ($app): ResponseInterface {
+    if ($request->getMethod() === 'OPTIONS') {
+        $response = $app->getResponseFactory()->createResponse();
+    } else {
+        $response = $handler->handle($request);
+    }
+
+    return $response
+        ->withHeader('Access-Control-Allow-Credentials', 'true')
+        ->withHeader('Access-Control-Allow-Origin', '*')
+        ->withHeader('Access-Control-Allow-Headers', '*')
+        ->withHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
+        ->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        ->withHeader('Pragma', 'no-cache');
+});
+//////////////////////
+
+
+
 
 // Tworzenie ServerRequest za pomocą Nyholm PSR-7 Server
 $creator = new ServerRequestCreator(
