@@ -59,11 +59,16 @@ class BookController
     // Usuń książkę
     public function deleteBook(Request $request, Response $response, array $args = []): Response
     {
-        $bookId = (int) $args['id'];
-        $deleted = $this->book->delete($bookId);
-        if ($deleted) {
-            return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+        if (isset($args['id'])) {
+            $bookId = (int) $args['id'];
+            $deleted = $this->book->delete($bookId);
+            if ($deleted) {
+                return $response->withStatus(200)->withHeader('Content-Type', 'application/json');
+            }
+            return $response->withStatus(404, 'Book not found');
         }
-        return $response->withStatus(404, 'Book not found');
+    
+        return $response->withStatus(400, 'Invalid request: ID not provided');
     }
+    
 }

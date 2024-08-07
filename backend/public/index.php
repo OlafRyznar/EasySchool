@@ -5,6 +5,8 @@ use DI\Bridge\Slim\Bridge;
 use Psr\Container\ContainerInterface;
 use App\Controllers\StudentController;
 use App\Controllers\BookController;
+use App\Controllers\GradeController;
+use App\Controllers\SubjectController;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Slim\Factory\AppFactory;
@@ -34,26 +36,37 @@ $container->set(PDO::class, function(ContainerInterface $container) {
     return $pdo;
 });
 
-// Rejestracja modelu Student
+// Rejestracja modeli i kontrolerów
 $container->set(App\Models\Student::class, function(ContainerInterface $container) {
     return new App\Models\Student($container->get(PDO::class));
 });
-
-// Rejestracja modelu Book
 
 $container->set(App\Models\Book::class, function(ContainerInterface $container) {
     return new App\Models\Book($container->get(PDO::class));
 });
 
-// Rejestracja kontrolera StudentController
+$container->set(App\Models\Grade::class, function(ContainerInterface $container) {
+    return new App\Models\Grade($container->get(PDO::class));
+});
+
+$container->set(App\Models\Subject::class, function(ContainerInterface $container) {
+    return new App\Models\Subject($container->get(PDO::class));
+});
+
 $container->set(StudentController::class, function(ContainerInterface $container) {
     return new StudentController($container->get(App\Models\Student::class));
 });
 
-// Rejestracja kontrolera BookController
-
 $container->set(BookController::class, function(ContainerInterface $container) {
     return new BookController($container->get(App\Models\Book::class));
+});
+
+$container->set(GradeController::class, function(ContainerInterface $container) {
+    return new GradeController($container->get(App\Models\Grade::class));
+});
+
+$container->set(SubjectController::class, function(ContainerInterface $container) {
+    return new SubjectController($container->get(App\Models\Subject::class));
 });
 
 // Tworzenie aplikacji Slim z użyciem kontenera DI
@@ -62,13 +75,10 @@ $psr17Factory = new Psr17Factory();
 AppFactory::setResponseFactory($psr17Factory);
 $app = Bridge::create($container);
 
-
-
 // Rejestracja tras
 (require __DIR__ . '/../routes/web.php')($app);
 
-
-//////////////////////
+// Middleware dla CORS
 $app->add(function (ServerRequestInterface $request, RequestHandlerInterface $handler) use ($app): ResponseInterface {
     if ($request->getMethod() === 'OPTIONS') {
         $response = $app->getResponseFactory()->createResponse();
@@ -84,10 +94,6 @@ $app->add(function (ServerRequestInterface $request, RequestHandlerInterface $ha
         ->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
         ->withHeader('Pragma', 'no-cache');
 });
-//////////////////////
-
-
-
 
 // Tworzenie ServerRequest za pomocą Nyholm PSR-7 Server
 $creator = new ServerRequestCreator(
