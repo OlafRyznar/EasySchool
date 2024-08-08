@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import logo1 from '../assets/logo1.png';
 import universitiesData from '../assets/universities.json';
 import VerificationCodeModal from '../components/VerificationCodeModal';
+import SHA256 from 'crypto-js/sha256';
 
 const CreateAccountPage = () => {
   const [name, setName] = useState('');
   const [surname, setSurname] = useState('');
   const [email, setEmail] = useState('');
+  const [guardianEmail, setGuardianEmail] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [password, setPassword] = useState('');
   const [repeatPassword, setRepeatPassword] = useState('');
@@ -17,7 +19,7 @@ const CreateAccountPage = () => {
   const [universities, setUniversities] = useState([]);
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [role, setRole] = useState('Student'); // State for user role
+  const [role, setRole] = useState('Student');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -76,8 +78,8 @@ const CreateAccountPage = () => {
     handleRegister();
   };
 
-  const handleRegister = () => {
-    if (!name || !surname || !email || !password || !repeatPassword || !role) {
+  const handleRegister = async () => {
+    if (!name || !surname || !email || !password || !repeatPassword || !role || (role === 'Guardian' && !guardianEmail)) {
       setError('Please fill in all fields.');
       return;
     }
@@ -93,23 +95,107 @@ const CreateAccountPage = () => {
     }
 
     setError('');
-    navigate('/');
+
+    // Hash the password with SHA-256
+    const hashedPassword = SHA256(password).toString();
+
+    // Prepare the data for the API request based on the role
+    let apiEndpoint = '';
+    let requestData = {};
+
+    if (role === 'Student') {
+      apiEndpoint = 'http://localhost:8080/student';
+      requestData = {
+        first_name: name,
+        last_name: surname,
+        'e-mail': email,
+        password: hashedPassword,
+        school: schoolName,
+        class_id: null, // Add class_id if applicable
+      };
+    } else if (role === 'Teacher') {
+      apiEndpoint = 'http://localhost:8080/teacher';
+      requestData = {
+        first_name: name,
+        last_name: surname,
+        'e-mail': email,
+        password: hashedPassword,
+        school: schoolName,
+        class_teacher_of: null,
+      };
+    } else if (role === 'Guardian') {
+      apiEndpoint = 'http://localhost:8080/guardian'; // Adjust if needed
+      requestData = {
+        first_name: name,
+        last_name: surname,
+        'e-mail': guardianEmail,
+        password: hashedPassword,
+      };
+    }
+
+    try {
+      const response = await fetch(apiEndpoint, { // Use the appropriate endpoint
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('User registered:', result);
+        navigate('/'); // Redirect upon successful registration
+      } else {
+        const errorData = await response.json();
+        setError(`Registration failed: ${errorData.error}`);
+      }
+    } catch (error) {
+      console.error('Error registering user:', error);
+      setError('An error occurred while registering.');
+    }
   };
 
   return (
     <div className="relative w-full h-screen bg-white flex items-center justify-center">
       <div className="absolute inset-0 bg-[#fcf6f6]"></div>
-      <div className="relative w-10/12 max-w-md bg-white p-6 rounded-lg shadow-lg">
+      <div className="relative w-10/12 max-w-md bg-white px-10 py-1 rounded-2xl shadow-2xl">
         <img
-          className="w-32 h-auto mx-auto mb-6"
+          className="w-24 h-auto mx-auto mb-2"
           src={logo1}
           alt="Logo"
         />
-        <h1 className="text-[#519bf3] text-3xl font-extrabold text-center mb-2">
+        <h1 className="text-[#519bf3] text-2xl font-extrabold text-center">
           Register
         </h1>
 
         <div className="space-y-3">
+          <div>
+            <label className="block text-black text-lg font-medium mb-1">Register as</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full h-10 bg-white border border-[#aeadad] rounded-lg px-3"
+            >
+              <option value="Student">Student</option>
+              <option value="Teacher">Teacher</option>
+              <option value="Guardian">Guardian</option>
+            </select>
+          </div>
+
+          {role === 'Guardian' && (
+            <div>
+              <label className="block text-black text-lg font-medium mb-1">Guardian's e-mail address</label>
+              <input
+                type="email"
+                value={guardianEmail}
+                onChange={(e) => setGuardianEmail(e.target.value)}
+                placeholder="Input guardian's e-mail"
+                className="w-full h-10 bg-white border border-[#aeadad] rounded-lg px-3"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-black text-lg font-medium mb-1">Name</label>
             <input
@@ -173,19 +259,6 @@ const CreateAccountPage = () => {
               placeholder="Input password again"
               className="w-full h-10 bg-white border border-[#aeadad] rounded-lg px-3"
             />
-          </div>
-
-          <div>
-            <label className="block text-black text-lg font-medium mb-1">Register as</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full h-10 bg-white border border-[#aeadad] rounded-lg px-3"
-            >
-              <option value="Student">Student</option>
-              <option value="Teacher">Teacher</option>
-              <option value="Guardian">Guardian</option>
-            </select>
           </div>
 
           {error && <p className="text-red-500 text-center">{error}</p>}
