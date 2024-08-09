@@ -7,8 +7,14 @@ use App\Controllers\GradeController;
 use App\Controllers\SubjectController;
 use App\Controllers\TeacherController;
 use App\Controllers\GuardianController; // Add this line
+use Slim\Exception\HttpNotFoundException;
 
 return function (App $app) {
+
+    // Route for login
+    $app->post('/api/auth/login', [AuthController::class, 'login']);
+
+
     // Routes for students
     $app->get('/student', [StudentController::class, 'getAllStudents']);
     $app->post('/student', [StudentController::class, 'createStudent']); // Route for creating a student
@@ -27,9 +33,11 @@ return function (App $app) {
     $app->put('/book/{id}', [BookController::class, 'updateBook']);
     $app->delete('/book/{id}', [BookController::class, 'deleteBook']);
 
-    // Routes for grades
-    $app->get('/grade', [GradeController::class, 'getAllGrades']);
+    // Pobieranie wszystkich ocen
+    $app->get('/grade', GradeController::class . ':getAllGrades');
 
+    // Pobieranie ocen dla konkretnego ucznia
+    $app->get('/grade/{student_id}', GradeController::class . ':getGradesByStudent');
     // Routes for subjects
     $app->get('/subject', [SubjectController::class, 'getAllSubjects']);
 

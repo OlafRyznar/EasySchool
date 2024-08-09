@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -7,17 +8,57 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    if (email === 'olaf@olaf.pl' && password === '123') {
-      localStorage.setItem('user', email); // Ustaw użytkownika w localStorage
-      navigate('/student'); // Przekieruj na stronę student
-    } else {
-      setError('Invalid login credentials');
+  // Sprawdź, czy użytkownik jest już zalogowany
+  useEffect(() => {
+    const userRole = localStorage.getItem('user_role');
+    if (userRole) {
+      // Jeśli użytkownik jest już zalogowany, przekieruj go do odpowiedniej strony
+      if (userRole === 'student') {
+        navigate('/student');
+      } else if (userRole === 'teacher') {
+        navigate('/teacher');
+      } else if (userRole === 'guardian') {
+        navigate('/guardian');
+      }
+    }
+  }, [navigate]);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Please fill in both fields.');
+      return;
+    }
+
+    try {
+      // Wysłanie żądania POST do login.php
+      const response = await axios.post('http://localhost:8080/login.php', { email, password });
+
+      // Destrukturyzacja danych odpowiedzi
+      const { success, role, user_id } = response.data;
+
+      if (success) {
+        // Przechowywanie danych użytkownika w localStorage
+        localStorage.setItem('user_id', user_id);
+        localStorage.setItem('user_role', role);
+
+        // Przekierowanie w zależności od roli
+        if (role === 'student') {
+          navigate('/student');
+        } else if (role === 'teacher') {
+          navigate('/teacher');
+        } else if (role === 'guardian') {
+          navigate('/guardian');
+        }
+      } else {
+        setError('Invalid login credentials');
+      }
+    } catch (error) {
+      setError('An error occurred. Please try again.');
     }
   };
 
   const handleCreateAccount = () => {
-    navigate('/create-account'); // Przekieruj na stronę tworzenia konta
+    navigate('/create-account');
   };
 
   return (
