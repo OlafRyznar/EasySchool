@@ -19,7 +19,13 @@ class Student
         $stmt = $this->pdo->query("SELECT * FROM student");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-
+    
+    public function getByClassId($classId)
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM student WHERE class_id = ?");
+        $stmt->execute([$classId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
     // Add a new student
     public function create($data)
     {

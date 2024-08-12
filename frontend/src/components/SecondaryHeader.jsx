@@ -17,6 +17,8 @@ const SecondaryHeader = () => {
     'other': 'Other',
     'schedule' : 'Schedule',
     'presence' : 'Presence',
+    'library' : 'Library',
+    'contact' : 'Contact',
     // Dodaj inne strony, jeśli potrzebne
   };
 

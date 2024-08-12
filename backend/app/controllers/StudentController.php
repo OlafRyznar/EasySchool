@@ -31,4 +31,22 @@ class StudentController
         $response->getBody()->write(json_encode(['student_id' => $studentId]));
         return $response->withStatus(201)->withHeader('Content-Type', 'application/json');
     }
+
+    public function getStudentsByClassId(Request $request, Response $response, array $args = []): Response
+{
+    $classId = $args['class_id'];
+    if (!$classId) {
+        $response->getBody()->write(json_encode(['error' => 'Class ID is required']));
+        return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+    }
+
+    $students = $this->student->getByClassId($classId);
+    if (empty($students)) {
+        $response->getBody()->write(json_encode(['message' => 'No students found for this class.']));
+        return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+    }
+
+    $response->getBody()->write(json_encode($students));
+    return $response->withHeader('Content-Type', 'application/json');
+}
 }

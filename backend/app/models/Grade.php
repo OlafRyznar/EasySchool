@@ -27,4 +27,17 @@ class Grade
         $stmt->execute([$studentId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    // Dodawanie nowej oceny
+    public function create($studentId, $subjectId, $gradeValue)
+    {
+        $stmt = $this->pdo->prepare("INSERT INTO grade (student_id, subject_id, grade_value) VALUES (?, ?, ?)");
+        $stmt->execute([$studentId, $subjectId, $gradeValue]);
+
+        // Sprawdzenie, czy operacja się powiodła
+        if ($stmt->rowCount() > 0) {
+            return $this->pdo->lastInsertId();
+        }
+        return false;
+    }
 }

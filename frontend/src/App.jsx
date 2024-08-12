@@ -15,6 +15,7 @@ import SchedulePage from './components/SchedulePage';
 import PresencePage from './components/PresencePage';
 import HomePage from './components/HomePage';
 import LibraryPage from './components/LibraryPage'; 
+import ContactPage from './components/ContactPage';
 
 
 // Funkcja do sprawdzania, czy użytkownik jest zalogowany
@@ -34,7 +35,7 @@ const Layout = () => {
   const location = useLocation();
 
   // Lista ścieżek, na których ma być wyświetlany SecondaryHeader
-  const secondaryHeaderPages = ['/student', '/teacher', '/parent', '/other', '/grades', '/schedule', '/presence', '/e-library'];
+  const secondaryHeaderPages = ['/student', '/teacher', '/parent', '/other', '/grades', '/schedule', '/presence', '/contact','/library'];
 
   // Sprawdź, czy aktualna ścieżka wymaga SecondaryHeader
   const isSecondaryHeaderPage = secondaryHeaderPages.includes(location.pathname);
@@ -59,7 +60,8 @@ const Layout = () => {
         <Route path="/grades" element={<ProtectedRoute element={<GradePage />} />} />
         <Route path="/schedule" element={<ProtectedRoute element={<SchedulePage />} />} />
         <Route path="/presence" element={<ProtectedRoute element={<PresencePage />} />} />
-        <Route path="/e-library" element={<ProtectedRoute element={<LibraryPage />} />} />
+        <Route path="/library" element={<ProtectedRoute element={<LibraryPage />} />} />
+        <Route path="/contact" element={<ProtectedRoute element={<ContactPage />} />} />
       </Routes>
     </div>
   );

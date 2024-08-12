@@ -2,11 +2,15 @@ import React, { useEffect, useState } from 'react';
 
 const GradesPage = () => {
   const [students, setStudents] = useState([]);
+  const [filteredStudents, setFilteredStudents] = useState([]);
   const [grades, setGrades] = useState([]);
-  const [subjects, setSubjects] = useState([]);
+  const [studentSubjects, setStudentSubjects] = useState([]);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedClass, setSelectedClass] = useState(""); // Start with empty string to show all classes
+  const [classes, setClasses] = useState([]);
   const [dataLoaded, setDataLoaded] = useState(false);
 
+  // Fetch all students
   useEffect(() => {
     const fetchStudents = async () => {
       try {
@@ -15,65 +19,99 @@ const GradesPage = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        console.log('Students fetched:', data); // Debugging
         setStudents(data);
+        setFilteredStudents(data);
+        console.log('Students fetched:', data);
       } catch (error) {
         console.error('Error fetching students:', error);
       }
     };
 
-    const fetchGrades = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/grade');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('Grades fetched:', data); // Debugging
-        setGrades(data);
-      } catch (error) {
-        console.error('Error fetching grades:', error);
-      }
-    };
-
-    const fetchSubjects = async () => {
-      try {
-        const response = await fetch('http://localhost:8080/subject');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        console.log('Subjects fetched:', data); // Debugging
-        setSubjects(data);
-      } catch (error) {
-        console.error('Error fetching subjects:', error);
-      }
-    };
-
-    Promise.all([fetchStudents(), fetchGrades(), fetchSubjects()]).then(() => setDataLoaded(true));
+    fetchStudents();
   }, []);
 
-  // Fetch grades for the selected student
-  const fetchGradesForStudent = async (studentId) => {
+  // Fetch all classes
+  useEffect(() => {
+    const fetchClasses = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/class');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setClasses(data);
+        console.log('Classes fetched:', data);
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+      }
+    };
+
+    fetchClasses();
+  }, []);
+
+  // Filter students by class
+  useEffect(() => {
+    if (selectedClass === "") {
+      setFilteredStudents(students); // Show all students
+    } else {
+      const selectedClassObj = classes.find(cls => cls.class_name === selectedClass);
+      if (selectedClassObj) {
+        const filtered = students.filter(student => student.class_id === selectedClassObj.class_id);
+        setFilteredStudents(filtered);
+      } else {
+        setFilteredStudents([]);
+      }
+    }
+  }, [selectedClass, students, classes]);
+
+  useEffect(() => {
+    if (selectedStudent) {
+      fetchStudentSubjects(selectedStudent);
+      fetchGradesForStudent(selectedStudent);
+    }
+  }, [selectedStudent]);
+
+  const fetchStudentSubjects = async (studentId) => {
     try {
-      const response = await fetch(`http://localhost:8080/grade?student_id=${studentId}`);
+      const response = await fetch(`http://localhost:8080/student_subject/${studentId}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log('Grades for selected student fetched:', data); // Debugging
+      setStudentSubjects(data);
+      console.log('Student subjects fetched:', data);
+      setDataLoaded(true);
+    } catch (error) {
+      console.error('Error fetching student subjects:', error);
+      setStudentSubjects([]);
+      setDataLoaded(true);
+    }
+  };
+
+  const fetchGradesForStudent = async (studentId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/grade/${studentId}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
       setGrades(data);
+      console.log('Grades for selected student fetched:', data);
     } catch (error) {
       console.error('Error fetching grades:', error);
+      setGrades([]);
     }
   };
 
   const handleStudentClick = (studentId) => {
     setSelectedStudent(studentId);
-    fetchGradesForStudent(studentId);
+    setDataLoaded(false);
   };
 
-  // Function to assign color based on grade
+  const handleClassChange = (event) => {
+    setSelectedClass(event.target.value);
+  };
+
   const getGradeColor = (grade) => {
     switch (grade) {
       case 'A+': return 'bg-green-700';
@@ -89,11 +127,10 @@ const GradesPage = () => {
       case 'D': return 'bg-red-400';
       case 'D-': return 'bg-red-400';
       case 'F': return 'bg-red-500';
-      default: return 'bg-gray-200'; // Default color for unknown grades
+      default: return 'bg-gray-200';
     }
   };
 
-  // Group grades by subject_id
   const gradesBySubject = grades.reduce((acc, grade) => {
     if (!acc[grade.subject_id]) {
       acc[grade.subject_id] = [];
@@ -102,18 +139,32 @@ const GradesPage = () => {
     return acc;
   }, {});
 
-  if (!dataLoaded) return <div>Loading...</div>;
+  const filteredSubjects = studentSubjects;
 
   return (
     <div className="w-full h-screen bg-white flex flex-col items-center p-8">
+      <h1 className="text-2xl font-bold mb-4">Select a Class</h1>
+      <select
+        onChange={handleClassChange}
+        value={selectedClass}
+        className="p-2 mb-4 border border-gray-300 rounded-lg shadow-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">All Classes</option>
+        {classes.map((classItem) => (
+          <option key={classItem.class_id} value={classItem.class_name}>
+            {classItem.class_name}
+          </option>
+        ))}
+      </select>
+
       <h1 className="text-2xl font-bold mb-4">Select a Student</h1>
       <div className="w-full max-w-4xl bg-[#f4f4f4] rounded-lg shadow-lg p-8 mb-8">
         <div className="flex flex-wrap gap-4">
-          {students.map((student) => (
+          {filteredStudents.map((student) => (
             <button
               key={student.student_id}
               onClick={() => handleStudentClick(student.student_id)}
-              className="p-4 bg-blue-200 rounded-lg shadow-md"
+              className="p-4 bg-blue-200 rounded-lg shadow-md hover:bg-blue-300 transition-colors"
             >
               {student.first_name} {student.last_name}
             </button>
@@ -121,12 +172,12 @@ const GradesPage = () => {
         </div>
       </div>
 
-      {selectedStudent && (
+      {dataLoaded && selectedStudent && (
         <div className="w-full max-w-4xl bg-[#f4f4f4] rounded-lg shadow-lg p-8">
-          <h2 className="text-xl font-semibold mb-4">Grades for Student ID: {selectedStudent}</h2>
-          {subjects.length ? (
+          <h2 className="text-xl font-semibold mb-4">Subjects for Student ID: {selectedStudent}</h2>
+          {filteredSubjects.length > 0 ? (
             <div className="flex flex-col gap-8">
-              {subjects.map((subject) => (
+              {filteredSubjects.map((subject) => (
                 <div key={subject.subject_id} className="p-4 bg-blue-100 rounded-lg shadow-md">
                   <h3 className="text-xl font-semibold mb-4">{subject.name}</h3>
                   <div className="flex gap-2 flex-wrap">
@@ -148,7 +199,7 @@ const GradesPage = () => {
               ))}
             </div>
           ) : (
-            <div className="text-gray-500">No subjects available</div>
+            <div className="text-gray-500">No subjects available for this student</div>
           )}
         </div>
       )}

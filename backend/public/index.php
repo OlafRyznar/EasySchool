@@ -10,6 +10,10 @@ use App\Controllers\SubjectController;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Slim\Factory\AppFactory;
+use App\Controllers\ClassController;
+use App\Controllers\UserController;
+use App\Controllers\MailController;
+use App\Controllers\TimetableController;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -53,6 +57,40 @@ $container->set(App\Models\Subject::class, function(ContainerInterface $containe
     return new App\Models\Subject($container->get(PDO::class));
 });
 
+$container->set(App\Models\UserModel::class, function(ContainerInterface $container) {
+    return new App\Models\UserModel($container->get(PDO::class));
+});
+
+$container->set(App\Models\Mail::class, function(ContainerInterface $container) {
+    return new App\Models\Mail($container->get(PDO::class));
+});
+
+$container->set(App\Models\Timetable::class, function(ContainerInterface $container) {
+    return new App\Models\Timetable($container->get(PDO::class));
+});
+
+
+
+$container->set(App\Models\ClassModel::class, function(ContainerInterface $container) {
+    return new App\Models\ClassModel($container->get(PDO::class));
+});
+
+$container->set(MailController::class, function(ContainerInterface $container) {
+    return new MailController($container->get(App\Models\Mail::class));
+});
+
+$container->set(TimetableController::class, function(ContainerInterface $container) {
+    return new TimetableController($container->get(App\Models\Timetable::class));
+});
+
+$container->set(UserController::class, function(ContainerInterface $container) {
+    return new UserController($container->get(App\Models\UserModel::class));
+});
+
+$container->set(ClassController::class, function(ContainerInterface $container) {
+    return new ClassController($container->get(App\Models\ClassModel::class));
+});
+
 $container->set(StudentController::class, function(ContainerInterface $container) {
     return new StudentController($container->get(App\Models\Student::class));
 });
@@ -68,6 +106,8 @@ $container->set(GradeController::class, function(ContainerInterface $container) 
 $container->set(SubjectController::class, function(ContainerInterface $container) {
     return new SubjectController($container->get(App\Models\Subject::class));
 });
+
+
 
 // Tworzenie aplikacji Slim z użyciem kontenera DI
 AppFactory::setContainer($container);
